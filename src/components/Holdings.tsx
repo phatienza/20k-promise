@@ -2,9 +2,29 @@
 import { useState } from 'react'
 import { EnrichedMergedHolding } from '@/lib/types'
 
+interface MergedHoldingBase {
+  ticker: string
+  name: string
+  exchange: string
+  totalShares: number
+  avgCost: number
+  totalCost: number
+  totalFees: number
+  firstBought: string
+  lastBought: string
+  reason: string
+  buyHistory: {
+    date: string
+    shares: number
+    pricePerShare: number
+    totalCost: number
+    fees: number
+    reason: string
+  }[]
+}
+
 interface Props {
-  holdings: EnrichedMergedHolding[]
-  updatedAt: string | null
+  holdings: MergedHoldingBase[]
 }
 
 function formatPHP(n: number | null, decimals = 2) {
@@ -26,7 +46,17 @@ function GainBadge({ pct }: { pct: number | null }) {
   )
 }
 
-function HoldingCard({ h, portPct }: { h: EnrichedMergedHolding; portPct: number }) {
+function HoldingCard({
+  h, portPct, currentPrice, currentValue, gainLoss, gainLossPct, loading
+}: {
+  h: MergedHoldingBase
+  portPct: number
+  currentPrice: number | null
+  currentValue: number | null
+  gainLoss: number | null
+  gainLossPct: number | null
+  loading: boolean
+}) {
   const [expanded, setExpanded] = useState(false)
   const isMultiBuy = h.buyHistory.length > 1
 
@@ -59,22 +89,27 @@ function HoldingCard({ h, portPct }: { h: EnrichedMergedHolding; portPct: number
             <div>
               <p className="text-[#9A9088] text-xs mb-1">Live Price</p>
               <p className="text-white font-medium">
-                {h.currentPrice ? formatPHP(h.currentPrice) : <span className="text-[#9A9088]">Loading…</span>}
+                {loading ? (
+                  <span className="text-[#9A9088] animate-pulse">Fetching…</span>
+                ) : currentPrice ? formatPHP(currentPrice) : (
+                  <span className="text-[#9A9088]">Unavailable</span>
+                )}
               </p>
             </div>
             <div>
               <p className="text-[#9A9088] text-xs mb-1">Current Value</p>
-              <p className="text-white font-medium">{formatPHP(h.currentValue)}</p>
+              <p className="text-white font-medium">{loading ? <span className="text-[#9A9088] animate-pulse">—</span> : formatPHP(currentValue)}</p>
             </div>
             <div>
               <p className="text-[#9A9088] text-xs mb-1">Gain / Loss</p>
-              <p className={`font-medium ${(h.gainLoss ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {h.gainLoss !== null ? ((h.gainLoss >= 0 ? '+' : '') + formatPHP(h.gainLoss)) : '—'}
+              <p className={`font-medium ${(gainLoss ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {loading ? <span className="text-[#9A9088] animate-pulse">—</span> :
+                  gainLoss !== null ? ((gainLoss >= 0 ? '+' : '') + formatPHP(gainLoss)) : '—'}
               </p>
             </div>
             <div>
               <p className="text-[#9A9088] text-xs mb-1">Return</p>
-              <GainBadge pct={h.gainLossPct} />
+              {loading ? <span className="text-[#9A9088] animate-pulse text-sm">—</span> : <GainBadge pct={gainLossPct} />}
             </div>
             <div>
               <p className="text-[#9A9088] text-xs mb-1">Portfolio %</p>
@@ -97,7 +132,7 @@ function HoldingCard({ h, portPct }: { h: EnrichedMergedHolding; portPct: number
 
         {isMultiBuy && (
           <button onClick={() => setExpanded(!expanded)}
-            className="mt-4 text-xs text-gold/70 hover:text-gold transition-colors flex items-center gap-1"
+            className="mt-4 text-xs transition-colors flex items-center gap-1"
             style={{ color: 'rgba(201,168,76,0.7)' }}>
             <span>{expanded ? '▲' : '▼'}</span>
             {expanded ? 'Hide' : 'Show'} buy history ({h.buyHistory.length} transactions)
@@ -138,9 +173,53 @@ function HoldingCard({ h, portPct }: { h: EnrichedMergedHolding; portPct: number
   )
 }
 
-export default function Holdings({ holdings, updatedAt }: Props) {
+export default function Holdings({ holdings }: Props) {
+  const [prices, setPrices] = useState<Record<string, number | null>>({})
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  const tickers = holdings.map(h => h.ticker)
+
+  // Fetch prices client-side — avoids Vercel IP blocks on Yahoo Finance
+  useState(() => {
+    async function fetchPrices() {
+      const result: Record<string, number | null> = {}
+      await Promise.all(
+        tickers.map(async (ticker) => {
+          try {
+            const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}.PS?interval=1d&range=1d`
+            const res = await fetch(url)
+            if (res.ok) {
+              const data = await res.json()
+              result[ticker] = data?.chart?.result?.[0]?.meta?.regularMarketPrice ?? null
+            } else {
+              result[ticker] = null
+            }
+          } catch {
+            result[ticker] = null
+          }
+        })
+      )
+      setPrices(result)
+      setUpdatedAt(new Date().toISOString())
+      setLoading(false)
+    }
+    fetchPrices()
+  })
+
+  const enrich = (h: MergedHoldingBase) => {
+    const currentPrice = prices[h.ticker] ?? null
+    const currentValue = currentPrice !== null ? currentPrice * h.totalShares : null
+    const gainLoss = currentValue !== null ? currentValue - h.totalCost : null
+    const gainLossPct = gainLoss !== null && h.totalCost > 0 ? (gainLoss / h.totalCost) * 100 : null
+    return { currentPrice, currentValue, gainLoss, gainLossPct }
+  }
+
   const totalCost = holdings.reduce((s, h) => s + h.totalCost, 0)
-  const totalValue = holdings.reduce((s, h) => s + (h.currentValue ?? h.totalCost), 0)
+  const totalValue = holdings.reduce((s, h) => {
+    const { currentValue } = enrich(h)
+    return s + (currentValue ?? h.totalCost)
+  }, 0)
   const totalGL = totalValue - totalCost
   const totalGLPct = totalCost > 0 ? (totalGL / totalCost) * 100 : 0
 
@@ -150,7 +229,7 @@ export default function Holdings({ holdings, updatedAt }: Props) {
         <div>
           <h2 className="font-display text-3xl text-white font-bold">Holdings</h2>
           <p className="text-[#9A9088] text-sm mt-1">
-            Prices update every 15 min · Multiple buys merged automatically
+            {loading ? 'Fetching live prices…' : 'Prices live from PSE · Multiple buys merged automatically'}
           </p>
         </div>
         {updatedAt && (
@@ -167,26 +246,32 @@ export default function Holdings({ holdings, updatedAt }: Props) {
         </div>
         <div>
           <p className="text-[#9A9088] text-xs tracking-widest uppercase mb-1">Current Value</p>
-          <p className="text-white text-xl font-medium">{formatPHP(totalValue)}</p>
+          <p className="text-white text-xl font-medium">{loading ? <span className="animate-pulse text-[#9A9088]">—</span> : formatPHP(totalValue)}</p>
         </div>
         <div>
           <p className="text-[#9A9088] text-xs tracking-widest uppercase mb-1">Total Gain / Loss</p>
           <p className={`text-xl font-medium ${totalGL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {totalGL >= 0 ? '+' : ''}{formatPHP(totalGL)}
+            {loading ? <span className="animate-pulse text-[#9A9088]">—</span> : (totalGL >= 0 ? '+' : '') + formatPHP(totalGL)}
           </p>
         </div>
         <div>
           <p className="text-[#9A9088] text-xs tracking-widest uppercase mb-1">Overall Return</p>
-          <GainBadge pct={totalGLPct} />
+          {loading ? <span className="animate-pulse text-[#9A9088] text-sm">—</span> : <GainBadge pct={totalGLPct} />}
         </div>
       </div>
 
       <div className="space-y-3">
         {holdings.map((h, i) => {
           const portPct = totalCost > 0 ? (h.totalCost / totalCost) * 100 : 0
+          const { currentPrice, currentValue, gainLoss, gainLossPct } = enrich(h)
           return (
             <div key={h.ticker} className={`animate-fade-up stagger-${Math.min(i + 3, 6)}`}>
-              <HoldingCard h={h} portPct={portPct} />
+              <HoldingCard
+                h={h} portPct={portPct}
+                currentPrice={currentPrice} currentValue={currentValue}
+                gainLoss={gainLoss} gainLossPct={gainLossPct}
+                loading={loading}
+              />
             </div>
           )
         })}
