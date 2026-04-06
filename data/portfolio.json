@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "pageTitle": "The 20K Promise",
+    "tagline": "Transparency in every peso.",
+    "goal": 2000000,
+    "monthlyCommitment": 20000,
+    "startDate": "2026-03-01",
+    "currency": "PHP"
+  },
+  "holdings": [
+    {
+      "ticker": "BDO",
+      "name": "BDO Unibank Inc.",
+      "exchange": "PSE",
+      "shares": 70,
+      "avgCost": 115.30,
+      "totalCost": 8095,
+      "fees": 24,
+      "dateBought": "2026-03-30",
+      "reason": "I trust it. Banks make money in almost any economy."
+    },
+    {
+      "ticker": "ALI",
+      "name": "Ayala Land Inc.",
+      "exchange": "PSE",
+      "shares": 300,
+      "avgCost": 16.36,
+      "totalCost": 4916,
+      "fees": 8,
+      "dateBought": "2026-03-30",
+      "reason": "One of the biggest real estate companies in the Philippines."
+    },
+    {
+      "ticker": "JFC",
+      "name": "Jollibee Foods Corp.",
+      "exchange": "PSE",
+      "shares": 30,
+      "avgCost": 178.50,
+      "totalCost": 5371,
+      "fees": 16,
+      "dateBought": "2026-03-30",
+      "reason": "Come on. It's Jollibee."
+    }
+  ],
+  "monthlyLog": [
+    {
+      "month": "2026-03",
+      "label": "March 2026",
+      "deposited": 18382,
+      "breakdown": {
+        "BDO": 8095,
+        "ALI": 4916,
+        "JFC": 5371
+      },
+      "notes": "First month. Three blue chips. Let's go."
+    }
+  ]
+}
