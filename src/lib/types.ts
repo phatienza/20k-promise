@@ -44,3 +44,28 @@ export interface EnrichedHolding extends Holding {
   gainLoss: number | null
   gainLossPct: number | null
 }
+
+export interface EnrichedMergedHolding {
+  ticker: string
+  name: string
+  exchange: string
+  totalShares: number
+  avgCost: number
+  totalCost: number
+  totalFees: number
+  firstBought: string
+  lastBought: string
+  reason: string
+  buyHistory: {
+    date: string
+    shares: number
+    pricePerShare: number
+    totalCost: number
+    fees: number
+    reason: string
+  }[]
+  currentPrice: number | null
+  currentValue: number | null
+  gainLoss: number | null
+  gainLossPct: number | null
+}
