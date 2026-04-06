@@ -13,19 +13,30 @@ export async function GET(request: Request) {
   await Promise.all(
     tickers.map(async (ticker) => {
       try {
-        // Yahoo Finance uses .PS suffix for PSE stocks
-        const symbol = `${ticker}.PS`
-        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`
+        // PSE Edge official API
+        const url = `https://edge.pse.com.ph/ajax/getQuote?symbol=${ticker}`
         const res = await fetch(url, {
-          headers: { 'User-Agent': 'Mozilla/5.0' },
-          next: { revalidate: 900 }, // cache 15 mins
+          headers: {
+            'User-Agent': 'Mozilla/5.0',
+            'Referer': 'https://edge.pse.com.ph/',
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+          next: { revalidate: 900 },
         })
         const data = await res.json()
-        const price =
-          data?.chart?.result?.[0]?.meta?.regularMarketPrice ?? null
-        prices[ticker] = price
+        const price = parseFloat(data?.price ?? data?.lastPrice ?? data?.close ?? '0')
+        prices[ticker] = price > 0 ? price : null
       } catch {
-        prices[ticker] = null
+        // Fallback: try PhilStocks
+        try {
+          const url2 = `https://www.philstocks.ph/quote/${ticker}.json`
+          const res2 = await fetch(url2, { next: { revalidate: 900 } })
+          const data2 = await res2.json()
+          const price2 = parseFloat(data2?.last ?? '0')
+          prices[ticker] = price2 > 0 ? price2 : null
+        } catch {
+          prices[ticker] = null
+        }
       }
     })
   )

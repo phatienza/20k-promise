@@ -14,17 +14,42 @@ async function getLivePrices(tickers: string[]) {
   await Promise.all(
     tickers.map(async (ticker) => {
       try {
-        const symbol = `${ticker}.PS`
-        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`
-        const res = await fetch(url, {
-          headers: { 'User-Agent': 'Mozilla/5.0' },
+        // Try PSE Edge first
+        const pseUrl = `https://edge.pse.com.ph/ajax/getQuote?symbol=${ticker}`
+        const res = await fetch(pseUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Referer': 'https://edge.pse.com.ph/',
+            'X-Requested-With': 'XMLHttpRequest',
+          },
           next: { revalidate: 900 },
         })
-        const data = await res.json()
-        prices[ticker] = data?.chart?.result?.[0]?.meta?.regularMarketPrice ?? null
-      } catch {
-        prices[ticker] = null
-      }
+        if (res.ok) {
+          const data = await res.json()
+          const price = parseFloat(data?.price ?? data?.lastPrice ?? data?.close ?? '0')
+          if (price > 0) { prices[ticker] = price; return }
+        }
+      } catch { /* fall through */ }
+
+      try {
+        // Fallback: Yahoo Finance with cookie header
+        const yahooUrl = `https://query2.finance.yahoo.com/v8/finance/chart/${ticker}.PS?interval=1d&range=1d`
+        const res = await fetch(yahooUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json',
+            'Accept-Language': 'en-US,en;q=0.9',
+          },
+          next: { revalidate: 900 },
+        })
+        if (res.ok) {
+          const data = await res.json()
+          const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice ?? null
+          if (price) { prices[ticker] = price; return }
+        }
+      } catch { /* fall through */ }
+
+      prices[ticker] = null
     })
   )
 

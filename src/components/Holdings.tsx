@@ -154,7 +154,7 @@ export default function Holdings({ holdings, updatedAt }: Props) {
           </p>
         </div>
         {updatedAt && (
-          <span className="text-[#9A9088] text-xs hidden md:block">
+          <span className="text-[#9A9088] text-xs hidden md:block" suppressHydrationWarning>
             Updated: {new Date(updatedAt).toLocaleTimeString('en-PH')}
           </span>
         )}
