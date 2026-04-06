@@ -9,21 +9,29 @@ import Footer from '@/components/Footer'
 const data = portfolioData as PortfolioData
 
 async function getLivePrices(tickers: string[]) {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-    const res = await fetch(
-      `${baseUrl}/api/prices?tickers=${tickers.join(',')}`,
-      { next: { revalidate: 900 } }
-    )
-    if (!res.ok) return null
-    return await res.json()
-  } catch {
-    return null
-  }
+  const prices: Record<string, number | null> = {}
+
+  await Promise.all(
+    tickers.map(async (ticker) => {
+      try {
+        const symbol = `${ticker}.PS`
+        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`
+        const res = await fetch(url, {
+          headers: { 'User-Agent': 'Mozilla/5.0' },
+          next: { revalidate: 900 },
+        })
+        const data = await res.json()
+        prices[ticker] = data?.chart?.result?.[0]?.meta?.regularMarketPrice ?? null
+      } catch {
+        prices[ticker] = null
+      }
+    })
+  )
+
+  return { prices, updatedAt: new Date().toISOString() }
 }
 
 export default async function Home() {
-  // Merge multiple buys of same ticker into one blended position
   const merged = mergeHoldings(data.holdings)
   const tickers = [...new Set(merged.map((h) => h.ticker))]
   const priceData = await getLivePrices(tickers)
@@ -40,24 +48,17 @@ export default async function Home() {
 
   return (
     <main>
-      {/* Background glow */}
       <div
         className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] pointer-events-none"
         style={{
           background: 'radial-gradient(ellipse at center, rgba(201,168,76,0.06) 0%, transparent 70%)',
         }}
       />
-
       <Hero meta={data.meta} monthlyLog={data.monthlyLog} totalInvested={totalInvested} />
-
       <div className="gold-line max-w-5xl mx-auto mb-12 px-6" />
-
       <Holdings holdings={enrichedHoldings} updatedAt={priceData?.updatedAt ?? null} />
-
       <div className="gold-line max-w-5xl mx-auto mb-12 px-6" />
-
       <MonthlyLogSection logs={data.monthlyLog} monthlyCommitment={data.meta.monthlyCommitment} />
-
       <Footer />
     </main>
   )
