@@ -10,7 +10,25 @@ A public investment portfolio tracker. ₱20,000 invested every month, documente
 
 The only file you ever need to edit is **`data/portfolio.json`**.
 
-### 1. Log a new month
+### 1. Update current prices
+
+Update the `currentPrice` field for each holding and set `lastUpdated`:
+
+```json
+"meta": {
+  "lastUpdated": "2026-04-30"
+},
+"holdings": [
+  {
+    "ticker": "BDO",
+    "currentPrice": 118.50
+  }
+]
+```
+
+Check prices at [PSE Edge](https://edge.pse.com.ph) or your broker app.
+
+### 2. Log a new month
 
 Add an entry to `monthlyLog`:
 
@@ -27,7 +45,7 @@ Add an entry to `monthlyLog`:
 }
 ```
 
-### 2. Add a new stock buy
+### 3. Add a new stock buy
 
 Add an entry to `holdings`:
 
@@ -41,19 +59,18 @@ Add an entry to `holdings`:
   "totalCost": 5890,
   "fees": 40,
   "dateBought": "2026-04-30",
+  "currentPrice": 58.50,
   "reason": "Diversifying into another bank. Strong fundamentals."
 }
 ```
 
-### 3. Buying more of an existing stock (e.g. more BDO)
+### 4. Buying more of an existing stock (e.g. more BDO)
 
-Just add another BDO entry with the new buy details. The site automatically merges all BDO entries into one card and calculates the blended average cost. Your followers can tap "Buy history" to see every individual transaction.
+Just add another BDO entry with the new buy details. The site automatically merges all BDO entries into one card and calculates the blended average cost.
 
 ---
 
 ## Publishing updates
-
-After editing `portfolio.json`, run these 3 commands:
 
 ```bash
 git add .
@@ -61,13 +78,7 @@ git commit -m "April 2026 update"
 git push
 ```
 
-The site updates automatically in about 60 seconds. ✅
-
----
-
-## Live stock prices
-
-Prices are pulled automatically from Yahoo Finance every 15 minutes during market hours. No setup needed — it just works.
+Site updates automatically in about 60 seconds. ✅
 
 ---
 

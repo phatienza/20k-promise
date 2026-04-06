@@ -5,12 +5,13 @@ export interface MergedHolding {
   name: string
   exchange: string
   totalShares: number
-  avgCost: number        // blended average cost per share
-  totalCost: number      // total amount invested across all buys
+  avgCost: number
+  totalCost: number
   totalFees: number
   firstBought: string
   lastBought: string
-  reason: string         // from the most recent buy
+  reason: string
+  currentPrice?: number
   buyHistory: {
     date: string
     shares: number
@@ -21,10 +22,6 @@ export interface MergedHolding {
   }[]
 }
 
-/**
- * Groups multiple buy entries for the same ticker into one merged holding.
- * Calculates blended average cost (WAVG) across all buys.
- */
 export function mergeHoldings(holdings: Holding[]): MergedHolding[] {
   const map = new Map<string, MergedHolding>()
 
@@ -41,28 +38,25 @@ export function mergeHoldings(holdings: Holding[]): MergedHolding[] {
         firstBought: h.dateBought,
         lastBought: h.dateBought,
         reason: h.reason,
+        currentPrice: h.currentPrice,
         buyHistory: [],
       })
     }
 
     const existing = map.get(h.ticker)!
-
-    // Accumulate
     existing.totalShares += h.shares
     existing.totalCost += h.totalCost
     existing.totalFees += h.fees
-
-    // Blended average = total cost / total shares
     existing.avgCost = existing.totalCost / existing.totalShares
 
-    // Track date range
     if (h.dateBought < existing.firstBought) existing.firstBought = h.dateBought
     if (h.dateBought > existing.lastBought) {
       existing.lastBought = h.dateBought
-      existing.reason = h.reason // latest reason wins
+      existing.reason = h.reason
+      // Use most recent currentPrice
+      if (h.currentPrice) existing.currentPrice = h.currentPrice
     }
 
-    // Push to history
     existing.buyHistory.push({
       date: h.dateBought,
       shares: h.shares,
@@ -73,7 +67,6 @@ export function mergeHoldings(holdings: Holding[]): MergedHolding[] {
     })
   }
 
-  // Sort buy history by date ascending
   for (const merged of map.values()) {
     merged.buyHistory.sort((a, b) => a.date.localeCompare(b.date))
   }

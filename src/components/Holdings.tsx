@@ -1,19 +1,20 @@
 'use client'
 import { useState } from 'react'
-import { EnrichedMergedHolding } from '@/lib/types'
+import type { EnrichedHolding as EnrichedMergedHolding } from '@/app/page'
+
 
 interface Props {
   holdings: EnrichedMergedHolding[]
   updatedAt: string | null
 }
 
-function formatPHP(n: number | null, decimals = 2) {
-  if (n === null) return '—'
+function formatPHP(n: number | null | undefined, decimals = 2) {
+  if (n === null || n === undefined) return '—'
   return '₱' + n.toLocaleString('en-PH', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
 }
 
-function GainBadge({ pct }: { pct: number | null }) {
-  if (pct === null) return <span className="text-[#9A9088] text-sm">—</span>
+function GainBadge({ pct }: { pct: number | undefined }) {
+  if (pct === undefined) return <span className="text-[#9A9088] text-sm">—</span>
   const positive = pct >= 0
   return (
     <span className="inline-block text-xs font-medium px-2 py-1 rounded-full"
@@ -60,17 +61,17 @@ function HoldingCard({ h, portPct }: { h: EnrichedMergedHolding; portPct: number
             <div>
               <p className="text-[#9A9088] text-xs mb-1">Live Price</p>
               <p className="text-white font-medium">
-                {h.currentPrice ? formatPHP(h.currentPrice) : <span className="text-[#9A9088]">—</span>}
+                {h.currentPrice !== undefined ? formatPHP(h.currentPrice) : <span className="text-[#9A9088]">—</span>}
               </p>
             </div>
             <div>
               <p className="text-[#9A9088] text-xs mb-1">Current Value</p>
-              <p className="text-white font-medium">{formatPHP(h.currentValue)}</p>
+              <p className="text-white font-medium">{h.currentPrice != undefined ? formatPHP(h.currentValue) : <span className="text-[#9A9088]">—</span>}</p>
             </div>
             <div>
               <p className="text-[#9A9088] text-xs mb-1">Gain / Loss</p>
               <p className={`font-medium ${(h.gainLoss ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {h.gainLoss !== null ? ((h.gainLoss >= 0 ? '+' : '') + formatPHP(h.gainLoss)) : '—'}
+                {h.gainLoss !== undefined ? ((h.gainLoss >= 0 ? '+' : '') + formatPHP(h.gainLoss)) : '—'}
               </p>
             </div>
             <div>
@@ -156,7 +157,7 @@ export default function Holdings({ holdings, updatedAt }: Props) {
         </div>
         {updatedAt && (
           <span className="text-[#9A9088] text-xs hidden md:block" suppressHydrationWarning>
-            Updated: {new Date(updatedAt).toLocaleTimeString('en-PH')}
+            Updated: {new Date(updatedAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}
           </span>
         )}
       </div>

@@ -1,3 +1,5 @@
+// src/lib/types.ts — full file
+
 export interface Holding {
   ticker: string
   name: string
@@ -7,6 +9,7 @@ export interface Holding {
   totalCost: number
   fees: number
   dateBought: string
+  currentPrice?: number
   reason: string
 }
 
@@ -25,47 +28,11 @@ export interface PortfolioMeta {
   monthlyCommitment: number
   startDate: string
   currency: string
+  lastUpdated?: string
 }
 
 export interface PortfolioData {
   meta: PortfolioMeta
   holdings: Holding[]
   monthlyLog: MonthlyLog[]
-}
-
-export interface LivePrices {
-  prices: Record<string, number | null>
-  updatedAt: string
-}
-
-export interface EnrichedHolding extends Holding {
-  currentPrice: number | null
-  currentValue: number | null
-  gainLoss: number | null
-  gainLossPct: number | null
-}
-
-export interface EnrichedMergedHolding {
-  ticker: string
-  name: string
-  exchange: string
-  totalShares: number
-  avgCost: number
-  totalCost: number
-  totalFees: number
-  firstBought: string
-  lastBought: string
-  reason: string
-  buyHistory: {
-    date: string
-    shares: number
-    pricePerShare: number
-    totalCost: number
-    fees: number
-    reason: string
-  }[]
-  currentPrice: number | null
-  currentValue: number | null
-  gainLoss: number | null
-  gainLossPct: number | null
 }
