@@ -13,31 +13,32 @@ export async function GET(request: Request) {
   await Promise.all(
     tickers.map(async (ticker) => {
       try {
-        // PSE Edge official API
-        const url = `https://edge.pse.com.ph/ajax/getQuote?symbol=${ticker}`
-        const res = await fetch(url, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0',
-            'Referer': 'https://edge.pse.com.ph/',
-            'X-Requested-With': 'XMLHttpRequest',
-          },
-          next: { revalidate: 900 },
-        })
-        const data = await res.json()
-        const price = parseFloat(data?.price ?? data?.lastPrice ?? data?.close ?? '0')
-        prices[ticker] = price > 0 ? price : null
-      } catch {
-        // Fallback: try PhilStocks
-        try {
-          const url2 = `https://www.philstocks.ph/quote/${ticker}.json`
-          const res2 = await fetch(url2, { next: { revalidate: 900 } })
-          const data2 = await res2.json()
-          const price2 = parseFloat(data2?.last ?? '0')
-          prices[ticker] = price2 > 0 ? price2 : null
-        } catch {
-          prices[ticker] = null
+        // PSE Lookup — free, no API key, dedicated Philippine stocks API
+        const res = await fetch(
+          `https://pselookup.vrymel.com/api/stocks/${ticker}`,
+          { next: { revalidate: 900 } }
+        )
+        if (res.ok) {
+          const data = await res.json()
+          const price = data?.stock?.[0]?.price?.amount ?? null
+          if (price) { prices[ticker] = parseFloat(price); return }
         }
-      }
+      } catch { /* fall through */ }
+
+      // Fallback: phisix-api (another free PH stocks API)
+      try {
+        const res2 = await fetch(
+          `https://phisix-api4.appspot.com/stocks/${ticker}.json`,
+          { next: { revalidate: 900 } }
+        )
+        if (res2.ok) {
+          const data2 = await res2.json()
+          const price2 = data2?.stock?.[0]?.price?.amount ?? null
+          if (price2) { prices[ticker] = parseFloat(price2); return }
+        }
+      } catch { /* fall through */ }
+
+      prices[ticker] = null
     })
   )
 

@@ -10,8 +10,8 @@
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
     "next": "^16.2.2",
-    "react": "^18",
-    "react-dom": "^18",
+    "react": "^19",
+    "react-dom": "^19",
     "recharts": "^2.12.7"
   },
   "devDependencies": {

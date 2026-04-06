@@ -19,12 +19,20 @@ export default function Hero({ meta, monthlyLog, totalInvested }: Props) {
   return (
     <section className="relative pt-20 pb-16 px-6 max-w-5xl mx-auto">
 
-      {/* Top label */}
-      <div className="animate-fade-up stagger-1 flex items-center gap-3 mb-8">
-        <div className="w-2 h-2 rounded-full bg-gold animate-pulse-gold" />
-        <span className="text-gold text-xs tracking-[0.2em] uppercase font-medium">
-          Live Portfolio
-        </span>
+      {/* Logo + label row */}
+      <div className="animate-fade-up stagger-1 flex items-center gap-4 mb-8">
+        <img
+          src="/logo.png"
+          alt="The 20K Promise"
+          className="w-10 h-10 rounded-lg"
+          style={{ border: '1px solid rgba(201,168,76,0.3)' }}
+        />
+        <div className="flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-gold animate-pulse-gold" />
+          <span className="text-gold text-xs tracking-[0.2em] uppercase font-medium">
+            Live Portfolio
+          </span>
+        </div>
       </div>
 
       {/* Main title */}
