@@ -42,7 +42,7 @@ export default function Home() {
       <Holdings holdings={enrichedHoldings} updatedAt={lastUpdated} />
       <div className="gold-line max-w-5xl mx-auto mb-12 px-6" />
       <MonthlyLogSection logs={data.monthlyLog} monthlyCommitment={data.meta.monthlyCommitment} />
-      <Footer />
+      <Footer meta={data.meta} />
     </main>
   )
 }

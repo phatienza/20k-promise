@@ -1,5 +1,3 @@
-// src/lib/types.ts — full file
-
 export interface Holding {
   ticker: string
   name: string
@@ -29,6 +27,11 @@ export interface PortfolioMeta {
   startDate: string
   currency: string
   lastUpdated?: string
+  social?: {
+    facebook?: string
+    threads?: string
+    instagram?: string
+  }
 }
 
 export interface PortfolioData {
